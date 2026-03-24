@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI } from '../api/search-console.js';
 import { defaultDateRange, isValidDate } from '../utils/dates.js';
+import { resolveSiteUrl } from '../utils/site-url.js';
 import {
   formatNumber,
   formatCTR,
@@ -9,13 +10,13 @@ import {
 } from '../utils/formatting.js';
 
 export const searchAnalyticsSchema = {
-  siteUrl: z.string().describe('The site URL (e.g., "https://example.com/" or "sc-domain:example.com")'),
+  siteUrl: z.string().optional().describe('The site URL (e.g., "https://example.com/" or "sc-domain:example.com"). Falls back to GSC_DEFAULT_SITE_URL env var if not provided.'),
   startDate: z.string().optional().describe('Start date in YYYY-MM-DD format (default: 9 days ago)'),
   endDate: z.string().optional().describe('End date in YYYY-MM-DD format (default: 2 days ago)'),
   dimensions: z
-    .array(z.enum(['query', 'page', 'country', 'device', 'searchAppearance', 'date']))
+    .array(z.enum(['query', 'page', 'country', 'device', 'searchAppearance', 'date', 'hour']))
     .optional()
-    .describe('Dimensions to group by (default: ["query"])'),
+    .describe('Dimensions to group by (default: ["query"]). Use "hour" for hourly breakdowns (requires dataState "hourly_all", last ~10 days only).'),
   searchType: z
     .enum(['web', 'discover', 'googleNews', 'news', 'image', 'video'])
     .optional()
@@ -45,7 +46,7 @@ export const searchAnalyticsSchema = {
 export async function handleSearchAnalytics(
   api: GoogleSearchConsoleAPI,
   args: {
-    siteUrl: string;
+    siteUrl?: string;
     startDate?: string;
     endDate?: string;
     dimensions?: string[];
@@ -57,6 +58,11 @@ export async function handleSearchAnalytics(
     aggregationType?: string;
   },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   const defaults = defaultDateRange();
   const startDate = args.startDate || defaults.startDate;
   const endDate = args.endDate || defaults.endDate;
@@ -73,7 +79,7 @@ export async function handleSearchAnalytics(
 
   try {
     const result = await api.querySearchAnalytics({
-      siteUrl: args.siteUrl,
+      siteUrl: siteUrl,
       startDate,
       endDate,
       dimensions,
@@ -91,7 +97,7 @@ export async function handleSearchAnalytics(
       return {
         content: [{
           type: 'text' as const,
-          text: `No data found for ${args.siteUrl} from ${startDate} to ${endDate} with dimensions [${dimensions.join(', ')}].\n\nThis could mean:\n- The site has no traffic for this period/search type\n- The date range is too recent (try dates 3+ days ago with dataState "final")\n- The site URL format is incorrect (use "https://example.com/" with trailing slash, or "sc-domain:example.com")`,
+          text: `No data found for ${siteUrl} from ${startDate} to ${endDate} with dimensions [${dimensions.join(', ')}].\n\nThis could mean:\n- The site has no traffic for this period/search type\n- The date range is too recent (try dates 3+ days ago with dataState "final")\n- The site URL format is incorrect (use "https://example.com/" with trailing slash, or "sc-domain:example.com")`,
         }],
       };
     }
@@ -116,7 +122,7 @@ export async function handleSearchAnalytics(
         : 0;
 
     const summary = [
-      `Search Analytics for ${args.siteUrl}`,
+      `Search Analytics for ${siteUrl}`,
       `Period: ${startDate} to ${endDate} | Search Type: ${args.searchType || 'web'} | Data: ${dataState}`,
       `Total: ${formatNumber(totalClicks)} clicks, ${formatNumber(totalImpressions)} impressions, ${formatCTR(avgCTR)} avg CTR, ${formatPosition(avgPosition)} avg position`,
       `Showing ${result.rows.length} rows${args.startRow ? ` (offset: ${args.startRow})` : ''}`,

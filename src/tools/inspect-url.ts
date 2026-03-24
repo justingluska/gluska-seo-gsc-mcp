@@ -1,23 +1,29 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI } from '../api/search-console.js';
+import { resolveSiteUrl } from '../utils/site-url.js';
 
 export const inspectUrlSchema = {
   url: z.string().url().describe('The URL to inspect'),
-  siteUrl: z.string().describe('The site URL that contains this page'),
+  siteUrl: z.string().optional().describe('The site URL that contains this page. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
   languageCode: z.string().optional().describe('Language code for results (e.g., "en-US")'),
 };
 
 export const batchInspectUrlsSchema = {
   urls: z.array(z.string().url()).min(1).max(100).describe('URLs to inspect (max 100)'),
-  siteUrl: z.string().describe('The site URL that contains these pages'),
+  siteUrl: z.string().optional().describe('The site URL that contains these pages. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
 };
 
 export async function handleInspectUrl(
   api: GoogleSearchConsoleAPI,
-  args: { url: string; siteUrl: string; languageCode?: string },
+  args: { url: string; siteUrl?: string; languageCode?: string },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   try {
-    const result = await api.inspectUrl(args.url, args.siteUrl, args.languageCode);
+    const result = await api.inspectUrl(args.url, siteUrl, args.languageCode);
     const idx = result.indexStatusResult;
     const mobile = result.mobileUsabilityResult;
     const rich = result.richResultsResult;
@@ -110,8 +116,13 @@ export async function handleInspectUrl(
 
 export async function handleBatchInspectUrls(
   api: GoogleSearchConsoleAPI,
-  args: { urls: string[]; siteUrl: string },
+  args: { urls: string[]; siteUrl?: string },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   const quotaRemaining = api.getInspectionQuotaRemaining();
   if (args.urls.length > quotaRemaining) {
     return {
@@ -128,7 +139,7 @@ export async function handleBatchInspectUrls(
 
   for (const url of args.urls) {
     try {
-      const result = await api.inspectUrl(url, args.siteUrl);
+      const result = await api.inspectUrl(url, siteUrl);
       const idx = result.indexStatusResult;
       results.push({
         url,
@@ -153,7 +164,7 @@ export async function handleBatchInspectUrls(
   }
 
   const sections: string[] = [
-    `Batch URL Inspection for ${args.siteUrl}`,
+    `Batch URL Inspection for ${siteUrl}`,
     `Inspected: ${results.length}/${args.urls.length} | Errors: ${errors.length}`,
     `Quota remaining: ${api.getInspectionQuotaRemaining()}/day`,
     '',

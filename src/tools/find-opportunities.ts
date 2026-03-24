@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI, SearchAnalyticsRow } from '../api/search-console.js';
 import { daysAgo } from '../utils/dates.js';
+import { resolveSiteUrl } from '../utils/site-url.js';
 import {
   formatNumber,
   formatCTR,
@@ -10,7 +11,7 @@ import {
 } from '../utils/formatting.js';
 
 export const findOpportunitiesSchema = {
-  siteUrl: z.string().describe('The site URL'),
+  siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
   type: z
     .enum(['quick_wins', 'declining', 'emerging', 'all'])
     .optional()
@@ -22,12 +23,17 @@ export const findOpportunitiesSchema = {
 export async function handleFindOpportunities(
   api: GoogleSearchConsoleAPI,
   args: {
-    siteUrl: string;
+    siteUrl?: string;
     type?: string;
     searchType?: string;
     rowLimit?: number;
   },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   const type = args.type || 'all';
   const rowLimit = args.rowLimit || 5000;
 
@@ -40,7 +46,7 @@ export async function handleFindOpportunities(
 
     const [recent, prior] = await Promise.all([
       api.querySearchAnalytics({
-        siteUrl: args.siteUrl,
+        siteUrl: siteUrl,
         startDate: recentStart,
         endDate: recentEnd,
         dimensions: ['query', 'page'],
@@ -49,7 +55,7 @@ export async function handleFindOpportunities(
         dataState: 'all',
       }),
       api.querySearchAnalytics({
-        siteUrl: args.siteUrl,
+        siteUrl: siteUrl,
         startDate: priorStart,
         endDate: priorEnd,
         dimensions: ['query', 'page'],
@@ -60,7 +66,7 @@ export async function handleFindOpportunities(
     ]);
 
     const sections: string[] = [
-      `Opportunity Analysis for ${args.siteUrl}`,
+      `Opportunity Analysis for ${siteUrl}`,
       `Recent: ${recentStart} to ${recentEnd} | Prior: ${priorStart} to ${priorEnd}`,
       '',
     ];

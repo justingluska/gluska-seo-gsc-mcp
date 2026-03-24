@@ -1,7 +1,7 @@
 {
   "name": "google-search-console-mcp",
   "version": "0.1.0",
-  "description": "The definitive Google Search Console MCP server — search analytics, URL inspection, sitemaps, indexing API, and smart SEO analysis tools",
+  "description": "An unofficial, open-source MCP server for Google Search Console — search analytics, URL inspection, sitemaps, indexing API, and smart SEO opportunity detection",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

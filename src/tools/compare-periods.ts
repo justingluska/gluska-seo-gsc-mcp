@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI, SearchAnalyticsRow } from '../api/search-console.js';
 import { isValidDate } from '../utils/dates.js';
+import { resolveSiteUrl } from '../utils/site-url.js';
 import {
   formatNumber,
   formatCTR,
@@ -11,7 +12,7 @@ import {
 } from '../utils/formatting.js';
 
 export const comparePeriodsSchema = {
-  siteUrl: z.string().describe('The site URL'),
+  siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
   period1StartDate: z.string().describe('First period start date (YYYY-MM-DD) — the "before" period'),
   period1EndDate: z.string().describe('First period end date (YYYY-MM-DD)'),
   period2StartDate: z.string().describe('Second period start date (YYYY-MM-DD) — the "after" period'),
@@ -27,7 +28,7 @@ export const comparePeriodsSchema = {
 export async function handleComparePeriods(
   api: GoogleSearchConsoleAPI,
   args: {
-    siteUrl: string;
+    siteUrl?: string;
     period1StartDate: string;
     period1EndDate: string;
     period2StartDate: string;
@@ -37,6 +38,11 @@ export async function handleComparePeriods(
     rowLimit?: number;
   },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   const dates = [args.period1StartDate, args.period1EndDate, args.period2StartDate, args.period2EndDate];
   for (const d of dates) {
     if (!isValidDate(d)) {
@@ -51,7 +57,7 @@ export async function handleComparePeriods(
     // Fetch both periods in parallel
     const [period1, period2] = await Promise.all([
       api.querySearchAnalytics({
-        siteUrl: args.siteUrl,
+        siteUrl: siteUrl,
         startDate: args.period1StartDate,
         endDate: args.period1EndDate,
         dimensions,
@@ -60,7 +66,7 @@ export async function handleComparePeriods(
         dataState: 'all',
       }),
       api.querySearchAnalytics({
-        siteUrl: args.siteUrl,
+        siteUrl: siteUrl,
         startDate: args.period2StartDate,
         endDate: args.period2EndDate,
         dimensions,
@@ -143,7 +149,7 @@ export async function handleComparePeriods(
     ]);
 
     const summary = [
-      `Period Comparison for ${args.siteUrl}`,
+      `Period Comparison for ${siteUrl}`,
       `Period 1: ${args.period1StartDate} to ${args.period1EndDate}`,
       `Period 2: ${args.period2StartDate} to ${args.period2EndDate}`,
       '',

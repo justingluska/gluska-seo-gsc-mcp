@@ -1,33 +1,39 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI } from '../api/search-console.js';
+import { resolveSiteUrl } from '../utils/site-url.js';
 import { formatTable } from '../utils/formatting.js';
 
 export const listSitemapsSchema = {
-  siteUrl: z.string().describe('The site URL'),
+  siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
 };
 
 export const submitSitemapSchema = {
-  siteUrl: z.string().describe('The site URL'),
+  siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
   sitemapUrl: z.string().url().describe('The full URL of the sitemap to submit'),
 };
 
 export const deleteSitemapSchema = {
-  siteUrl: z.string().describe('The site URL'),
+  siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
   sitemapUrl: z.string().url().describe('The full URL of the sitemap to delete'),
 };
 
 export async function handleListSitemaps(
   api: GoogleSearchConsoleAPI,
-  args: { siteUrl: string },
+  args: { siteUrl?: string },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   try {
-    const sitemaps = await api.listSitemaps(args.siteUrl);
+    const sitemaps = await api.listSitemaps(siteUrl);
 
     if (sitemaps.length === 0) {
       return {
         content: [{
           type: 'text' as const,
-          text: `No sitemaps found for ${args.siteUrl}.\n\nYou can submit a sitemap using the submit_sitemap tool.`,
+          text: `No sitemaps found for ${siteUrl}.\n\nYou can submit a sitemap using the submit_sitemap tool.`,
         }],
       };
     }
@@ -54,7 +60,7 @@ export async function handleListSitemaps(
     }
 
     const output = [
-      `Sitemaps for ${args.siteUrl}`,
+      `Sitemaps for ${siteUrl}`,
       `Total: ${sitemaps.length} sitemap(s)`,
       '',
       formatTable(headers, rows),
@@ -76,10 +82,15 @@ export async function handleListSitemaps(
 
 export async function handleSubmitSitemap(
   api: GoogleSearchConsoleAPI,
-  args: { siteUrl: string; sitemapUrl: string },
+  args: { siteUrl?: string; sitemapUrl: string },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   try {
-    await api.submitSitemap(args.siteUrl, args.sitemapUrl);
+    await api.submitSitemap(siteUrl, args.sitemapUrl);
     return {
       content: [{
         type: 'text' as const,
@@ -100,10 +111,15 @@ export async function handleSubmitSitemap(
 
 export async function handleDeleteSitemap(
   api: GoogleSearchConsoleAPI,
-  args: { siteUrl: string; sitemapUrl: string },
+  args: { siteUrl?: string; sitemapUrl: string },
 ) {
+  const siteUrl = resolveSiteUrl(args.siteUrl);
+  if (!siteUrl) {
+    return { content: [{ type: 'text' as const, text: 'No site URL provided. Either pass siteUrl or set the GSC_DEFAULT_SITE_URL environment variable.' }], isError: true };
+  }
+
   try {
-    await api.deleteSitemap(args.siteUrl, args.sitemapUrl);
+    await api.deleteSitemap(siteUrl, args.sitemapUrl);
     return {
       content: [{
         type: 'text' as const,
