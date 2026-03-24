@@ -2,9 +2,11 @@
  * Formats numbers for human-readable display.
  */
 export function formatNumber(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}K`;
+  return String(n);
 }
 
 /**
@@ -25,8 +27,9 @@ export function formatPosition(pos: number): string {
  * Formats a delta value with + or - prefix.
  */
 export function formatDelta(value: number, formatter: (n: number) => string = String): string {
-  const prefix = value > 0 ? '+' : '';
-  return `${prefix}${formatter(value)}`;
+  if (value === 0) return formatter(0);
+  const prefix = value > 0 ? '+' : '-';
+  return `${prefix}${formatter(Math.abs(value))}`;
 }
 
 /**

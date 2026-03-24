@@ -23,7 +23,10 @@ export function daysAgo(n: number): string {
  * Validates a date string is in YYYY-MM-DD format.
  */
 export function isValidDate(dateStr: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !isNaN(new Date(dateStr).getTime());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
+  return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
 }
 
 /**
