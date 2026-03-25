@@ -18,6 +18,12 @@ An unofficial, open-source [Model Context Protocol (MCP)](https://modelcontextpr
 | `search_analytics` | Query search performance data with full filtering, all dimensions, and all search types | Yes |
 | `compare_periods` | Compare two date ranges with automatic delta calculations | Yes |
 | `find_opportunities` | Identify quick wins, declining pages, and emerging queries | Yes |
+| `diagnose_traffic_drops` | Find pages that lost traffic and diagnose why (ranking loss, CTR collapse, or demand decline) | Yes |
+| `cannibalization` | Detect keywords where multiple pages compete against each other | Yes |
+| `content_decay` | Find pages with 3+ consecutive months of traffic decline | Yes |
+| `ctr_benchmarks` | Compare your CTR against industry averages by position | Yes |
+| `topic_clusters` | Analyze performance of all pages under a URL path prefix | Yes |
+| `verify_claim` | Self-check a data claim before presenting it (anti-hallucination) | Yes |
 | `inspect_url` | Inspect a single URL's index status, mobile usability, rich results, and AMP | Yes |
 | `batch_inspect_urls` | Inspect multiple URLs at once (max 100, rate-limited to 2K/day) | Yes |
 | `list_sitemaps` | List all sitemaps with status, error counts, and content details | Yes |
@@ -45,6 +51,18 @@ An unofficial, open-source [Model Context Protocol (MCP)](https://modelcontextpr
 - **Quick wins** — Queries ranking 5-20 with high impressions but low CTR (optimize titles/descriptions)
 - **Declining content** — Pages losing traffic compared to the prior period
 - **Emerging queries** — New or rapidly growing queries you should capitalize on
+
+### Diagnose Traffic Issues
+- **Traffic drop diagnosis** — Find pages that lost traffic and learn *why*: ranking loss, CTR collapse, or demand decline
+- **Keyword cannibalization** — Detect queries where multiple pages compete against each other
+- **Content decay** — Surface pages with 3+ consecutive months of decline before they disappear from SERPs
+- **CTR benchmarks** — Compare your click-through rates against industry averages by position
+- **Topic cluster analysis** — See aggregate performance for all pages under a URL path (like `/blog/seo/`)
+
+### Anti-Hallucination Safeguards
+- **Data provenance** — Every response includes a `_meta` block confirming the data source, tool, and parameters used
+- **Guardrail prompts** — Tool descriptions instruct the AI to report exact numbers and avoid speculation
+- **Verify claim** — A dedicated tool lets the AI self-check any claim by re-querying the API before presenting it
 
 ### Monitor Technical SEO
 - Inspect any URL's index status, mobile usability, rich results, and AMP
@@ -239,6 +257,17 @@ Here are some things you can ask your AI assistant once the MCP is connected:
 | "What content is declining in traffic?" | `find_opportunities` |
 | "Are there any new emerging queries I should know about?" | `find_opportunities` |
 | "Give me a full SEO opportunity analysis" | `find_opportunities` |
+
+### Traffic Diagnosis & Optimization
+| What You Can Ask | Tool Used |
+|------------------|-----------|
+| "Which pages lost traffic recently and why?" | `diagnose_traffic_drops` |
+| "Are any of my pages cannibalizing each other?" | `cannibalization` |
+| "Which pages are slowly dying?" | `content_decay` |
+| "How does my CTR compare to benchmarks?" | `ctr_benchmarks` |
+| "Show me CTR benchmarks for my top queries" | `ctr_benchmarks` |
+| "How is my /blog/ section performing?" | `topic_clusters` |
+| "Show me the performance of all pages under /docs/" | `topic_clusters` |
 
 ### Technical SEO
 | What You Can Ask | Tool Used |
@@ -503,6 +532,12 @@ src/
     search-analytics.ts   # search_analytics tool
     compare-periods.ts    # compare_periods tool
     find-opportunities.ts # find_opportunities tool
+    traffic-drops.ts          # diagnose_traffic_drops tool (NEW)
+    cannibalization.ts    # cannibalization detection tool (NEW)
+    content-decay.ts      # content_decay tool (NEW)
+    ctr-benchmarks.ts     # ctr_benchmarks tool (NEW)
+    topic-clusters.ts     # topic_clusters tool (NEW)
+    verify-claim.ts       # verify_claim anti-hallucination tool (NEW)
     inspect-url.ts        # inspect_url + batch_inspect_urls tools
     sitemaps.ts           # list/submit/delete sitemap tools
     properties.ts         # list_properties tool
@@ -511,6 +546,7 @@ src/
     rate-limiter.ts   # Token bucket rate limiter + daily quota tracker
     dates.ts          # Date utilities
     formatting.ts     # Response formatting (tables, numbers, CTR)
+    meta.ts           # Data provenance metadata (NEW)
     logger.ts         # stderr-only logger
 tests/
   tools/              # Tool-level tests with mocked APIs
@@ -527,6 +563,10 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 4. Run tests (`npm test`)
 5. Commit your changes
 6. Push to the branch and open a Pull Request
+
+## Acknowledgments
+
+The anti-hallucination features in this project — data provenance (`_meta` blocks), guardrail prompts, and the `verify_claim` tool — were inspired by [Suganthan Mohanadasan](https://suganthan.com/)'s work on his [GSC MCP server](https://github.com/Suganthan-Mohanadasan/Suganthans-GSC-MCP) and his [blog post](https://suganthan.com/blog/google-search-console-mcp-server/) about building trust into AI-powered SEO tools. The ideas for dedicated cannibalization detection, content decay tracking, CTR benchmarks, traffic drop diagnosis, and topic cluster analysis were also informed by his write-up. Thanks Suganthan for sharing your work with the community.
 
 ## Disclaimer
 

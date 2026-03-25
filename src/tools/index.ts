@@ -22,3 +22,9 @@ export {
   handleNotifyUrlUpdate,
   handleGetIndexingStatus,
 } from './indexing.js';
+export { verifyClaimSchema, handleVerifyClaim } from './verify-claim.js';
+export { diagnoseTrafficDropsSchema, handleDiagnoseTrafficDrops } from './traffic-drops.js';
+export { cannibalizationSchema, handleCannibalization } from './cannibalization.js';
+export { contentDecaySchema, handleContentDecay } from './content-decay.js';
+export { ctrBenchmarksSchema, handleCTRBenchmarks } from './ctr-benchmarks.js';
+export { topicClustersSchema, handleTopicClusters } from './topic-clusters.js';

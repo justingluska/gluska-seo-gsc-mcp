@@ -1,6 +1,6 @@
 {
   "name": "gluska-seo-gsc-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An unofficial, open-source MCP server for Google Search Console — search analytics, URL inspection, sitemaps, indexing API, and smart SEO opportunity detection",
   "type": "module",
   "main": "dist/index.js",

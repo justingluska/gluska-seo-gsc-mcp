@@ -8,6 +8,7 @@ import {
   formatPosition,
   formatTable,
 } from '../utils/formatting.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const searchAnalyticsSchema = {
   siteUrl: z.string().optional().describe('The site URL (e.g., "https://example.com/" or "sc-domain:example.com"). Falls back to GSC_DEFAULT_SITE_URL env var if not provided.'),
@@ -121,6 +122,12 @@ export async function handleSearchAnalytics(
         ? result.rows.reduce((sum, r) => sum + (r.position || 0), 0) / result.rows.length
         : 0;
 
+    const meta = formatMeta('search_analytics', {
+      siteUrl, startDate, endDate, dimensions,
+      searchType: args.searchType || 'web', dataState,
+      rowLimit: args.rowLimit || 1000,
+    });
+
     const summary = [
       `Search Analytics for ${siteUrl}`,
       `Period: ${startDate} to ${endDate} | Search Type: ${args.searchType || 'web'} | Data: ${dataState}`,
@@ -128,6 +135,7 @@ export async function handleSearchAnalytics(
       `Showing ${result.rows.length} rows${args.startRow ? ` (offset: ${args.startRow})` : ''}`,
       '',
       formatTable(headers, rows),
+      meta,
     ].join('\n');
 
     return { content: [{ type: 'text' as const, text: summary }] };

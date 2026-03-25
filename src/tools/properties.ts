@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI } from '../api/search-console.js';
 import { formatTable } from '../utils/formatting.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const listPropertiesSchema = {};
 
@@ -31,6 +32,7 @@ export async function handleListProperties(api: GoogleSearchConsoleAPI) {
       formatTable(headers, rows),
       '',
       'Use any of these site URLs with other tools (e.g., search_analytics, inspect_url).',
+      formatMeta('list_properties', {}),
     ].join('\n');
 
     return { content: [{ type: 'text' as const, text: output }] };

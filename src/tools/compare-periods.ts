@@ -10,6 +10,7 @@ import {
   formatPercentChange,
   formatTable,
 } from '../utils/formatting.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const comparePeriodsSchema = {
   siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
@@ -148,6 +149,13 @@ export async function handleComparePeriods(
       formatPosition(c.p2Position),
     ]);
 
+    const meta = formatMeta('compare_periods', {
+      siteUrl,
+      period1: `${args.period1StartDate} to ${args.period1EndDate}`,
+      period2: `${args.period2StartDate} to ${args.period2EndDate}`,
+      dimensions,
+    });
+
     const summary = [
       `Period Comparison for ${siteUrl}`,
       `Period 1: ${args.period1StartDate} to ${args.period1EndDate}`,
@@ -158,6 +166,7 @@ export async function handleComparePeriods(
       '',
       `Top changes (sorted by absolute click delta):`,
       formatTable(headers, rows),
+      meta,
     ].join('\n');
 
     return { content: [{ type: 'text' as const, text: summary }] };

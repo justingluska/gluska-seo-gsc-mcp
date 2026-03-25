@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GoogleSearchConsoleAPI } from '../api/search-console.js';
 import { resolveSiteUrl } from '../utils/site-url.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const inspectUrlSchema = {
   url: z.string().url().describe('The URL to inspect'),
@@ -101,6 +102,8 @@ export async function handleInspectUrl(
       sections.push('', `View in Search Console: ${result.inspectionResultLink}`);
     }
 
+    sections.push(formatMeta('inspect_url', { url: args.url, siteUrl }));
+
     return { content: [{ type: 'text' as const, text: sections.join('\n') }] };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -198,6 +201,8 @@ export async function handleBatchInspectUrls(
       sections.push(`  ${e.url}: ${e.error}`);
     }
   }
+
+  sections.push(formatMeta('batch_inspect_urls', { siteUrl, urlCount: args.urls.length }));
 
   return { content: [{ type: 'text' as const, text: sections.join('\n') }] };
 }

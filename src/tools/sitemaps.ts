@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { GoogleSearchConsoleAPI } from '../api/search-console.js';
 import { resolveSiteUrl } from '../utils/site-url.js';
 import { formatTable } from '../utils/formatting.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const listSitemapsSchema = {
   siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
@@ -69,6 +70,8 @@ export async function handleListSitemaps(
     if (contentDetails.length > 0) {
       output.push('', '## Content Details', ...contentDetails);
     }
+
+    output.push(formatMeta('list_sitemaps', { siteUrl }));
 
     return { content: [{ type: 'text' as const, text: output.join('\n') }] };
   } catch (error) {

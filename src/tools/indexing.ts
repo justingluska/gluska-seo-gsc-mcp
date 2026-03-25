@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GoogleIndexingAPI } from '../api/indexing.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const notifyUrlUpdateSchema = {
   url: z.string().url().describe('The URL to notify Google about'),
@@ -39,6 +40,7 @@ export async function handleNotifyUrlUpdate(
       `Quota remaining: ${quota.publish} publish, ${quota.metadata} metadata requests today`,
       '',
       'Note: The Indexing API is officially supported for pages with JobPosting or BroadcastEvent structured data. Google may not process notifications for other page types.',
+      formatMeta('notify_url_update', { url: args.url, type: args.type }),
     );
 
     return { content: [{ type: 'text' as const, text: sections.join('\n') }] };
@@ -83,6 +85,7 @@ export async function handleGetIndexingStatus(
     }
 
     sections.push(`\nQuota remaining: ${quota.publish} publish, ${quota.metadata} metadata requests today`);
+    sections.push(formatMeta('get_indexing_status', { url: args.url }));
 
     return { content: [{ type: 'text' as const, text: sections.join('\n') }] };
   } catch (error) {

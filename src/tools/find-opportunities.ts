@@ -9,6 +9,7 @@ import {
   formatPercentChange,
   formatTable,
 } from '../utils/formatting.js';
+import { formatMeta } from '../utils/meta.js';
 
 export const findOpportunitiesSchema = {
   siteUrl: z.string().optional().describe('The site URL. Falls back to GSC_DEFAULT_SITE_URL if not provided.'),
@@ -176,6 +177,9 @@ export async function handleFindOpportunities(
         sections.push('## Emerging Queries\nNo significant emerging queries detected.\n');
       }
     }
+
+    const meta = formatMeta('find_opportunities', { siteUrl, type, recentStart, recentEnd, priorStart, priorEnd });
+    sections.push(meta);
 
     return { content: [{ type: 'text' as const, text: sections.join('\n') }] };
   } catch (error) {
